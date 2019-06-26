@@ -48,6 +48,15 @@ class Setting(db.Model):
     gs_bucket_name = db.Column(db.String)
 
     #
+    # CAPTCHA
+    #
+
+    # Google reCAPTCHA
+    is_google_recaptcha_enabled = db.Column(db.Boolean, default=False, nullable=False)
+    google_recaptcha_site = db.Column(db.String)
+    google_recaptcha_secret = db.Column(db.String)
+
+    #
     # Social Login
     #
 
@@ -73,12 +82,23 @@ class Setting(db.Model):
     stripe_secret_key = db.Column(db.String)
     stripe_publishable_key = db.Column(db.String)
 
+    # AliPay Keys - Stripe Sources
+    alipay_secret_key = db.Column(db.String)
+    alipay_publishable_key = db.Column(db.String)
+
     # Paypal credentials
     paypal_mode = db.Column(db.String)
     paypal_client = db.Column(db.String)
     paypal_secret = db.Column(db.String)
     paypal_sandbox_client = db.Column(db.String)
     paypal_sandbox_secret = db.Column(db.String)
+
+    # Omise credentials
+    omise_mode = db.Column(db.String)
+    omise_live_public = db.Column(db.String)
+    omise_live_secret = db.Column(db.String)
+    omise_test_public = db.Column(db.String)
+    omise_test_secret = db.Column(db.String)
 
     #
     # EMAIL
@@ -126,7 +146,7 @@ class Setting(db.Model):
                                       "event preferences and provide you with a customized experience. "
                                       "By closing this banner or by continuing to use the site, you agree. "
                                       "For more information please review our cookie policy.")
-    cookie_policy_link = db.Column(db.String, default="http://next.cookie-policy.eventyay.com")
+    cookie_policy_link = db.Column(db.String, default="https://next.eventyay.com/cookie-policy")
 
     def __init__(self,
                  app_environment=Environment.PRODUCTION,
@@ -137,6 +157,7 @@ class Setting(db.Model):
                  gs_key=None,
                  gs_secret=None,
                  gs_bucket_name=None,
+                 is_google_recaptcha_enabled=False, google_recaptcha_secret=None, google_recaptcha_site=None,
                  google_client_id=None, google_client_secret=None,
                  fb_client_id=None, fb_client_secret=None, tw_consumer_key=None,
                  stripe_client_id=None,
@@ -169,7 +190,14 @@ class Setting(db.Model):
                  android_app_url=None,
                  web_app_url=None,
                  cookie_policy=None,
-                 cookie_policy_link=None):
+                 cookie_policy_link=None,
+                 omise_mode=None,
+                 omise_test_public=None,
+                 omise_test_secret=None,
+                 omise_live_public=None,
+                 omise_live_secret=None,
+                 alipay_publishable_key=None,
+                 alipay_secret_key=None):
         self.app_environment = app_environment
         self.aws_key = aws_key
         self.aws_secret = aws_secret
@@ -179,6 +207,10 @@ class Setting(db.Model):
         self.gs_key = gs_key
         self.gs_secret = gs_secret
         self.gs_bucket_name = gs_bucket_name
+
+        self.is_google_recaptcha_enabled = is_google_recaptcha_enabled
+        self.google_recaptcha_site = google_recaptcha_site
+        self.google_recaptcha_secret = google_recaptcha_secret
 
         self.google_client_id = google_client_id
         self.google_client_secret = google_client_secret
@@ -225,6 +257,17 @@ class Setting(db.Model):
         self.paypal_sandbox_client = paypal_sandbox_client
         self.paypal_sandbox_secret = paypal_sandbox_secret
 
+        # Omise Credentials
+        self.omise_mode = omise_mode
+        self.omise_test_public = omise_test_public
+        self.omise_test_secret = omise_test_secret
+        self.omise_live_public = omise_live_public
+        self.omise_live_secret = omise_live_secret
+
+        # AliPay Credentails
+        self.alipay_publishable_key = alipay_publishable_key
+        self.alipay_secret_key = alipay_secret_key
+
     @hybrid_property
     def is_paypal_activated(self):
         if self.paypal_mode == 'sandbox' and self.paypal_sandbox_client and self.paypal_sandbox_secret:
@@ -243,3 +286,19 @@ class Setting(db.Model):
 
     def __str__(self):
         return self.__repr__()
+
+    @hybrid_property
+    def is_alipay_activated(self):
+        if self.alipay_publishable_key and self.alipay_secret_key:
+            return True
+        else:
+            return False
+
+    @hybrid_property
+    def is_omise_activated(self):
+        if self.omise_mode == 'test' and self.omise_test_public and self.omise_test_secret:
+            return True
+        elif self.omise_live_public and self.omise_live_secret:
+            return True
+        else:
+            return False

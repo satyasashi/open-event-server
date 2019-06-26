@@ -1,50 +1,74 @@
-version: '2'
+version: '3.5'
+
+x-environment-vars: &environment-vars
+  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+  ELASTICSEARCH_HOST: elastic:9200
+  REDIS_URL: redis://redis:6379/0
+  ADMIN_EMAIL: "@{ADMIN_EMAIL}"
+  ADMIN_PASSWORD: "@{ADMIN_PASSWORD}"
+
+x-defaults: &defaults
+  build: .
+  restart: unless-stopped
+  environment:
+    <<: *environment-vars
+  depends_on:
+    - postgres
+    - redis
+    - elastic
+  links:
+    - postgres:postgres
+    - redis:redis
+    - elastic:elastic
+  volumes:
+    - ./static:/data/app/static
 
 services:
 
   postgres:
     image: postgres:10-alpine
+    container_name: opev-postgres
+    restart: unless-stopped
     volumes:
       - pg:/var/lib/postgresql/data
-      - ./postgres-initdb.d:/docker-entrypoint-initdb.d
-    ports:
-      - 127.0.0.1:5432:5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
 
   redis:
     image: redis:3-alpine
+    container_name: opev-redis
+    restart: unless-stopped
     command: redis-server
     volumes:
       - rd:/var/lib/redis/data
-    ports:
-      - 127.0.0.1:6379:6379
 
   elastic:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
+    image: elasticsearch:5.6.12-alpine
+    container_name: opev-elastic-search
+    restart: unless-stopped
     environment:
         - discovery.type=single-node
     volumes:
         - es:/usr/share/elasticsearch/data
     ports:
-        - 127.0.0.1:9200:9200
-        - 127.0.0.1:9300:9300
+        - 9200:9200
+        - 9300:9300
 
   web:
-    build: .
-    environment:
-      DATABASE_URL: postgresql://john:start@postgres:5432/oevent_2
-      ELASTICSEARCH_HOST: elastic:9200
-      REDIS_URL: redis://redis:6379/0
-      C_FORCE_ROOT: "true"
-      ADMIN_EMAIL: "@{ADMIN_EMAIL}"
-      ADMIN_PASSWORD: "@{ADMIN_PASSWORD}"
-    links:
-      - postgres:postgres
-      - redis:redis
-      - elastic:elastic
-    volumes:
-      - ./data/web:/open_event/static
+    <<: *defaults
+    container_name: opev-web
     ports:
-      - 0.0.0.0:5000:5000
+      - 8080:8080
+
+  celery:
+    <<: *defaults
+    container_name: opev-celery
+    environment:
+      <<: *environment-vars
+      DEPLOYMENT: celery
+      C_FORCE_ROOT: "true"
 
 volumes:
     pg:

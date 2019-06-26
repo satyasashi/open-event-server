@@ -1,13 +1,15 @@
 # Open Event Server
 
-![Open Event Server](https://storage.googleapis.com/eventyay.com/assets/branding/server_branding.png)
+![Open Event Server](/docs/images/open-event-server.png)
 
 [![GitHub release](https://img.shields.io/badge/release-1.0.0--alpha.10-blue.svg?style=flat-square)](https://github.com/fossasia/open-event-server/releases/latest)
 [![Build Status](https://travis-ci.org/fossasia/open-event-server.svg?branch=development)](https://travis-ci.org/fossasia/open-event-server)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/1ac554483fac462797ffa5a8b9adf2fa?style=flat-square)](https://www.codacy.com/app/fossasia/open-event-orga-server)
-[![Codecov branch](https://codecov.io/gh/fossasia/open-event-server/branch/master/graph/badge.svg?style=flat-square)](https://codecov.io/gh/fossasia/open-event-orga-server)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/1ac554483fac462797ffa5a8b9adf2fa?style=flat-square)](https://www.codacy.com/app/fossasia/open-event-server)
+[![Codecov branch](https://codecov.io/gh/fossasia/open-event-server/branch/master/graph/badge.svg?style=flat-square)](https://codecov.io/gh/fossasia/open-event-server)
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-ff006f.svg?style=flat-square)](https://gitter.im/fossasia/open-event-server)
-[![Open Source Helpers](https://www.codetriage.com/fossasia/open-event-orga-server/badges/users.svg)](https://www.codetriage.com/fossasia/open-event-orga-server)
+[![Reviewed by Hound](https://img.shields.io/badge/Reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
+[![Mailing List](https://img.shields.io/badge/Mailing%20List-FOSSASIA-blue.svg)](https://groups.google.com/forum/#!forum/open-event)
+[![Twitter Follow](https://img.shields.io/twitter/follow/eventyay.svg?style=social&label=Follow&maxAge=2592000?style=flat-square)](https://twitter.com/eventyay)
 
 > **The Open Event Server enables organizers to manage events from concerts to conferences and meet-ups.**
 
@@ -90,7 +92,7 @@ Required keys can be obtained from [https://www.instagram.com/developer/authenti
 
 Google maps is used to get information about location (info about country, city, latitude and longitude).
 
-Required keys can be obtained from [https://maps.googleapis.com/maps/api](https://maps.googleapis.com/maps/api).
+Required keys can be obtained from [https://developers.google.com/maps/documentation/javascript/get-api-key](https://developers.google.com/maps/documentation/javascript/get-api-key).
 
 #### Media Storage - Local/Amazon S3/Google Cloud
 
@@ -203,13 +205,13 @@ export APP_CONFIG=config.TestingConfig
 
 * Then go to the project directory and run the following command:
 ```
-python3 -m unittest discover tests/unittests/
+python3 -m unittest discover tests/all/
 ```
 * It will run each test one by one.
 
 * You can also use the following command to run tests using nosetests:
 ```
-nosetests tests/unittests/
+nosetests tests/all/
 ```
 
 #### Running robot framework tests
@@ -251,7 +253,7 @@ This is an Open Source project and we would be happy to see contributors who rep
 We have the following branches :
  * **development**
 	 All development goes on in this branch. If you're making a contribution, please make a pull request to _development_.
-	 PRs to must pass a build check and a unit-test check on Travis (https://open-event-api.herokuapp.com - Is running off the development branch. It is hosted on Heroku.)
+	 All PRs must pass a build check and a unit-test check on Travis (https://open-event-api.herokuapp.com - Is running off the development branch. It is hosted on Heroku.)
 	 (https://api.eventyay.com - Is running off the `development` branch. Hosted on Google Cloud Platform (Google Container Engine + Kubernetes).)
  * **master**
    This contains shipped code. After significant features/bug-fixes are accumulated on development, we make a version update and make a release. (https://eventyay.com - Is running off the master branch. (whichever is the latest release.) Hosted on Google Cloud Platform (Google Container Engine + Kubernetes).)
@@ -260,14 +262,14 @@ We have the following branches :
 
 ## Release Policy
 
-The tentative release policy, for now, is, (since there is a lot of activity and a lot of bugs), an alpha release every Monday and Friday (since we see more activity on weekends). So, any bug-fixes will not be reflected at eventyay.com until a new release is made in the master branch.
+The tentative release policy, for now (since there is a lot of activity and a lot of bugs), is an alpha release every Monday and Friday (since we see more activity on weekends). So, any bug-fixes will not be reflected at eventyay.com until a new release is made in the master branch.
 
 ## Contributions Best Practices
 
 **Commits**
 * Write clear meaningful git commit messages (Do read http://chris.beams.io/posts/git-commit/)
 * Make sure your PR's description contains GitHub's special keyword references that automatically close the related issue when the PR is merged. (More info at https://github.com/blog/1506-closing-issues-via-pull-requests )
-* When you make very very minor changes to a PR of yours (like for example fixing a failing travis build or some small style corrections or minor changes requested by reviewers) make sure you squash your commits afterward so that you don't have an absurd number of commits for a very small fix. (Learn how to squash at https://davidwalsh.name/squash-commits-git )
+* When you make very minor changes to a PR of yours (like for example fixing a failing travis build or some small style corrections or minor changes requested by reviewers) make sure you squash your commits afterward so that you don't have an absurd number of commits for a very small fix. (Learn how to squash at https://davidwalsh.name/squash-commits-git )
 * When you're submitting a PR for a UI-related issue, it would be really awesome if you add a screenshot of your change or a link to a deployment where it can be tested out along with your PR. It makes it very easy for the reviewers and you'll also get reviews quicker.
 
 **Feature Requests and Bug Reports**
@@ -280,6 +282,6 @@ The tentative release policy, for now, is, (since there is a lot of activity and
 
 ## License
 
-This project is currently licensed under the **[GNU General Public License v3](LICENSE.md)**.
+This project is currently licensed under the **[GNU General Public License v3](LICENSE)**.
 
 > To obtain the software under a different license, please contact [FOSSASIA](http://blog.fossasia.org/contact/).

@@ -14,6 +14,10 @@ from app.models import db
 from populate_db import populate_without_print
 
 # imports from factories
+
+from app.factories.event_location import EventLocationFactory
+from app.factories.custom_system_role import CustomSysRoleFactory
+from app.factories.panel_permission import PanelPermissionFactory
 from app.factories.user import UserFactory
 from app.factories.notification_action import NotificationActionFactory
 from app.factories.notification import NotificationFactory
@@ -58,6 +62,7 @@ from app.factories.user_email import UserEmailFactory
 from app.factories.feedback import FeedbackFactory
 from app.factories.service import ServiceFactory
 from app.factories.message_setting import MessageSettingsFactory
+from app.factories.user_favourite_events import UserFavouriteEventFactory
 
 
 
@@ -160,7 +165,10 @@ def user_post(transaction):
     :param transaction:
     :return:
     """
-    pass
+    with stash['app'].app_context():
+        user = UserFactory()
+        db.session.add(user)
+        db.session.commit()
 
 
 @hooks.before("Users > User Details > Get Details")
@@ -316,7 +324,10 @@ def event_post(transaction):
     :param transaction:
     :return:
     """
-    pass
+    with stash['app'].app_context():
+        event = EventFactoryBasic()
+        db.session.add(event)
+        db.session.commit()
 
 
 @hooks.before("Events > Event Details > Event Details")
@@ -1014,12 +1025,8 @@ def session_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
-        db.session.commit()
-
-        track = TrackFactory()
-        db.session.add(track)
+        session = SessionFactory()
+        db.session.add(session)
         db.session.commit()
 
 
@@ -1062,7 +1069,7 @@ def session_delete(transaction):
         db.session.commit()
 
 
-@hooks.before("Sessions > List Sessions under an Event > List Sessions")
+@hooks.before("Sessions > List Sessions under an Event > List Sessions under an Event")
 def event_session(transaction):
     """
     GET /events/1/sessions
@@ -1075,7 +1082,7 @@ def event_session(transaction):
         db.session.commit()
 
 
-@hooks.before("Sessions > List Sessions under a Track > List Sessions")
+@hooks.before("Sessions > List Sessions under a Track > List Sessions under a Track")
 def track_session(transaction):
     """
     GET /tracks/1/sessions
@@ -1088,7 +1095,7 @@ def track_session(transaction):
         db.session.commit()
 
 
-@hooks.before("Sessions > List Sessions under a Session Type > List Sessions")
+@hooks.before("Sessions > List Sessions under a Session Type > List Sessions under a Session Type")
 def session_type_session(transaction):
     """
     GET /session-types/1/sessions
@@ -1101,7 +1108,7 @@ def session_type_session(transaction):
         db.session.commit()
 
 
-@hooks.before("Sessions > List Sessions under a Microlocation > List Sessions")
+@hooks.before("Sessions > List Sessions under a Microlocation > List Sessions under a Microlocation")
 def microlocation_session(transaction):
     """
     GET /microlations/1/sessions
@@ -1114,7 +1121,7 @@ def microlocation_session(transaction):
         db.session.commit()
 
 
-@hooks.before("Sessions > List Sessions under a Speaker > List Sessions")
+@hooks.before("Sessions > List Sessions under a Speaker > List Sessions under a Speaker")
 def speaker_session(transaction):
     """
     GET /speakers/1/sessions
@@ -1136,8 +1143,8 @@ def session_type_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
+        session_type = SessionTypeFactory()
+        db.session.add(session_type)
         db.session.commit()
 
 
@@ -1206,7 +1213,7 @@ def session_session_type(transaction):
         db.session.commit()
 
 
-# ------------------------- Speaker -------------------------
+# ------------------------- Speakers -------------------------
 @hooks.before("Speakers > Speakers Collection > Create Speaker")
 def speaker_post(transaction):
     """
@@ -1215,14 +1222,12 @@ def speaker_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
-        session = SessionFactory()
-        db.session.add(session)
+        speaker = SpeakerFactory()
+        db.session.add(speaker)
         db.session.commit()
 
 
-@hooks.before("Speakers > Speaker > Speaker Details")
+@hooks.before("Speakers > Speaker Details > Speaker Details")
 def speaker_get_detail(transaction):
     """
     GET /speakers/1
@@ -1235,7 +1240,7 @@ def speaker_get_detail(transaction):
         db.session.commit()
 
 
-@hooks.before("Speakers > Speaker > Update Speaker")
+@hooks.before("Speakers > Speaker Details > Update Speaker")
 def speaker_patch(transaction):
     """
     PATCH /speakers/1
@@ -1248,7 +1253,7 @@ def speaker_patch(transaction):
         db.session.commit()
 
 
-@hooks.before("Speakers > Speaker > Delete Speaker")
+@hooks.before("Speakers > Speaker Details > Delete Speaker")
 def speaker_delete(transaction):
     """
     DELETE /speakers/1
@@ -1261,7 +1266,7 @@ def speaker_delete(transaction):
         db.session.commit()
 
 
-@hooks.before("Speakers > List Speakers for an Event > List Speakers")
+@hooks.before("Speakers > List Speakers under an Event > List Speakers under an Event")
 def event_speakers(transaction):
     """
     GET /events/1/speakers
@@ -1274,7 +1279,7 @@ def event_speakers(transaction):
         db.session.commit()
 
 
-@hooks.before("Speakers > List Speakers under a Session > List Speakers")
+@hooks.before("Speakers > List Speakers under a Session > List Speakers under a Session")
 def sessions_speakers(transaction):
     """
     GET /sessions/1/speakers
@@ -1287,7 +1292,7 @@ def sessions_speakers(transaction):
         db.session.commit()
 
 
-@hooks.before("Speakers > List Speaker Profiles for a User > List Speakers")
+@hooks.before("Speakers > List Speaker Profiles for a User > List Speaker Profiles for a User")
 def user_speakers(transaction):
     """
     GET /users/1/speakers
@@ -1322,8 +1327,8 @@ def social_link_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
+        social_link = SocialLinkFactory()
+        db.session.add(social_link)
         db.session.commit()
 
 
@@ -1367,30 +1372,15 @@ def social_link_delete(transaction):
 
 
 # ------------------------- Speakers Calls -------------------------
-@hooks.before("Speakers Calls > Speakers Call Collection > Get Speakers Call")
-def speakers_call_get(transaction):
-    """
-    GET /events/1/speakers-call
-    :param transaction:
-    :return:
-    """
-    with stash['app'].app_context():
-        speakers_call = SpeakersCallFactory()
-        db.session.add(speakers_call)
-        db.session.commit()
-
 
 @hooks.before("Speakers Calls > Speakers Call Collection > Create Speakers Call")
 def speakers_call_post(transaction):
     """
-    POST /events/1/speakers-call
+    POST /speakers-calls
     :param transaction:
     :return:
     """
-    with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
-        db.session.commit()
+    transaction['skip'] = True
 
 
 @hooks.before("Speakers Calls > Speakers Call Details > Speakers Call Details")
@@ -1467,8 +1457,8 @@ def sponsor_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
+        sponsor = SponsorFactory()
+        db.session.add(sponsor)
         db.session.commit()
 
 
@@ -1587,8 +1577,8 @@ def ticket_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
+        ticket = TicketFactory()
+        db.session.add(ticket)
         db.session.commit()
 
 
@@ -1631,7 +1621,7 @@ def ticket_delete(transaction):
         db.session.commit()
 
 
-@hooks.before("Tickets > List Tickets under an Event > List Tickets")
+@hooks.before("Tickets > List Tickets under an Event > List Tickets under an Event")
 def ticket_event(transaction):
     """
     GET /events/1/tickets
@@ -1639,12 +1629,12 @@ def ticket_event(transaction):
     :return:
     """
     with stash['app'].app_context():
-        ticket = TicketFactory()
-        db.session.add(ticket)
+        event = EventFactoryBasic()
+        db.session.add(event)
         db.session.commit()
 
 
-@hooks.before("Tickets > List Tickets under a Ticket-tag > List Tickets")
+@hooks.before("Tickets > List Tickets under a Ticket-tag > List Tickets under a Ticket-tag")
 def tikcet_tag_ticket(transaction):
     """
     GET /tikcet-tags/1/tickets
@@ -1657,7 +1647,7 @@ def tikcet_tag_ticket(transaction):
         db.session.commit()
 
 
-@hooks.before("Tickets > List Tickets for an Access Code > List Tickets")
+@hooks.before("Tickets > List Tickets for an Access Code > List Tickets for an Access Code")
 def access_code_ticket(transaction):
     """
     GET /access-codes/1/tickets
@@ -1670,7 +1660,7 @@ def access_code_ticket(transaction):
         db.session.commit()
 
 
-@hooks.before("Tickets > List Tickets for a Discount Code > List Tickets")
+@hooks.before("Tickets > List Tickets for a Discount Code > List Tickets for a Discount Code")
 def discount_code_ticket(transaction):
     """
     GET /discount-codes/1/tickets
@@ -1682,6 +1672,19 @@ def discount_code_ticket(transaction):
         db.session.add(discount_code)
         db.session.commit()
 
+
+@hooks.before("Tickets > List Tickets for an Order > List Tickets for an Order")
+def get_tickets_from_order(transaction):
+    """
+    GET /v1/orders/{identifier}/tickets
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        order = OrderFactory()
+        order.identifier = "7201904e"
+        db.session.add(order)
+        db.session.commit()
 
 # ------------------------- Ticket Fees -------------------------
 @hooks.before("Ticket Fees > Ticket Fees Collection > List Ticket Fees")
@@ -1704,7 +1707,10 @@ def ticket_fees_post(transaction):
     :param transaction:
     :return:
     """
-    pass
+    with stash['app'].app_context():
+        ticket_fees = TicketFeesFactory()
+        db.session.add(ticket_fees)
+        db.session.commit()
 
 
 @hooks.before("Ticket Fees > Ticket Fee Details > Get Ticket Fees Details")
@@ -1755,8 +1761,8 @@ def ticket_tag_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        tickets = TicketFactory()
-        db.session.add(tickets)
+        ticket_tag = TicketTagFactory()
+        db.session.add(ticket_tag)
         db.session.commit()
 
 
@@ -1799,7 +1805,7 @@ def ticket_tag_delete(transaction):
         db.session.commit()
 
 
-@hooks.before("Ticket Tags > List Ticket Tags under an Event > List all Ticket Tags")
+@hooks.before("Ticket Tags > List Ticket Tags under an Event > List Ticket Tags under an Event")
 def ticket_tag_event(transaction):
     """
     GET /events/1/ticket-tags
@@ -1807,12 +1813,12 @@ def ticket_tag_event(transaction):
     :return:
     """
     with stash['app'].app_context():
-        ticket_tag = TicketTagFactory()
-        db.session.add(ticket_tag)
+        event = EventFactoryBasic()
+        db.session.add(event)
         db.session.commit()
 
 
-@hooks.before("Ticket Tags > List Ticket Tags for a Ticket > List all Ticket Tags")
+@hooks.before("Ticket Tags > List Ticket Tags for a Ticket > List Ticket Tags for a Ticket")
 def ticket_tag_ticket(transaction):
     """
     GET /tickets/1/ticket-tags
@@ -1820,8 +1826,8 @@ def ticket_tag_ticket(transaction):
     :return:
     """
     with stash['app'].app_context():
-        ticket_tag = TicketTagFactory()
-        db.session.add(ticket_tag)
+        ticket = TicketFactory()
+        db.session.add(ticket)
         db.session.commit()
 
 
@@ -1906,8 +1912,8 @@ def track_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
+        track = TrackFactory()
+        db.session.add(track)
         db.session.commit()
 
 
@@ -1958,8 +1964,8 @@ def event_track_get_list(transaction):
     :return:
     """
     with stash['app'].app_context():
-        track = TrackFactory()
-        db.session.add(track)
+        event = EventFactoryBasic()
+        db.session.add(event)
         db.session.commit()
 
 
@@ -2120,10 +2126,8 @@ def email_notification_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        user = UserFactory()
-        db.session.add(user)
-        db.session.add(event)
+        email_notification = EmailNotificationFactory()
+        db.session.add(email_notification)
         db.session.commit()
 
 
@@ -2322,7 +2326,10 @@ def role_post(transaction):
     :param transaction:
     :return:
     """
-    pass
+    with stash['app'].app_context():
+        role = RoleFactory()
+        db.session.add(role)
+        db.session.commit()
 
 
 @hooks.before("Roles > Role Details > Get Role Details")
@@ -2551,7 +2558,10 @@ def page_post(transaction):
     :param transaction:
     :return:
     """
-    pass
+    with stash['app'].app_context():
+        page = PageFactory()
+        db.session.add(page)
+        db.session.commit()
 
 
 @hooks.before("Pages > Page Details > Get Page Details")
@@ -2883,8 +2893,8 @@ def access_code_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
+        access_code = AccessCodeFactory()
+        db.session.add(access_code)
         db.session.commit()
 
 
@@ -2949,8 +2959,8 @@ def event_access_code_get_list(transaction):
     :return:
     """
     with stash['app'].app_context():
-        access_code = AccessCodeFactory()
-        db.session.add(access_code)
+        event = EventFactoryBasic()
+        db.session.add(event)
         db.session.commit()
 
 
@@ -2962,8 +2972,8 @@ def user_access_code_get_list(transaction):
     :return:
     """
     with stash['app'].app_context():
-        access_code = AccessCodeFactory()
-        db.session.add(access_code)
+        user = UserFactory()
+        db.session.add(user)
         db.session.commit()
 
 
@@ -2975,8 +2985,8 @@ def ticket_access_code_get_list(transaction):
     :return:
     """
     with stash['app'].app_context():
-        access_code = AccessCodeFactory()
-        db.session.add(access_code)
+        ticket = TicketFactory()
+        db.session.add(ticket)
         db.session.commit()
 
 
@@ -2989,8 +2999,8 @@ def custom_form_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
+        custom_form = CustomFormFactory()
+        db.session.add(custom_form)
         db.session.commit()
 
 
@@ -3055,8 +3065,8 @@ def faq_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
+        faq = FaqFactory()
+        db.session.add(faq)
         db.session.commit()
 
 
@@ -3108,8 +3118,8 @@ def faq_get_list(transaction):
     :return:
     """
     with stash['app'].app_context():
-        faq = FaqFactory()
-        db.session.add(faq)
+        event = EventFactoryBasic()
+        db.session.add(event)
         db.session.commit()
 
 
@@ -3122,8 +3132,8 @@ def faq_type_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
+        faq_type = FaqTypeFactory()
+        db.session.add(faq_type)
         db.session.commit()
 
 
@@ -3174,8 +3184,8 @@ def event_faq_type_get_list(transaction):
     :return:
     """
     with stash['app'].app_context():
-        faq_type = FaqTypeFactory()
-        db.session.add(faq_type)
+        event = EventFactoryBasic()
+        db.session.add(event)
         db.session.commit()
 
 
@@ -3214,8 +3224,8 @@ def role_invite_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event = EventFactoryBasic()
-        db.session.add(event)
+        role_invite = RoleInviteFactory()
+        db.session.add(role_invite)
         db.session.commit()
 
 
@@ -3279,7 +3289,7 @@ def file_upload_post(transaction):
     transaction['skip'] = True
 
 
-# ------------------------- Event Locationss -------------------------
+# ------------------------- Event Locations -------------------------
 @hooks.before("Event Locations > Event Locations Collection > List All Event Locations")
 def event_location_get_list(transaction):
     """
@@ -3287,6 +3297,10 @@ def event_location_get_list(transaction):
     :param transaction:
     :return:
     """
+    with stash['app'].app_context():
+        event_location = EventLocationFactory()
+        db.session.add(event_location)
+        db.session.commit()
 
 
 # ------------------------- Event Types -------------------------
@@ -3310,7 +3324,10 @@ def event_type_post(transaction):
     :param transaction:
     :return:
     """
-    pass
+    with stash['app'].app_context():
+        event_type = EventTypeFactory()
+        db.session.add(event_type)
+        db.session.commit()
 
 
 @hooks.before("Event Types > Event Type Details > Event Type Details")
@@ -3389,7 +3406,10 @@ def event_topic_post(transaction):
     :param transaction:
     :return:
     """
-    pass
+    with stash['app'].app_context():
+        event_topic = EventTopicFactory()
+        db.session.add(event_topic)
+        db.session.commit()
 
 
 @hooks.before("Event Topics > Event Topic Details > Event Topic Details")
@@ -3482,8 +3502,8 @@ def event_sub_topic_post(transaction):
     :return:
     """
     with stash['app'].app_context():
-        event_topic = EventTopicFactory()
-        db.session.add(event_topic)
+        event_sub_topic = EventSubTopicFactory()
+        db.session.add(event_sub_topic)
         db.session.commit()
 
 
@@ -3580,7 +3600,11 @@ def custom_placeholder_post(transaction):
     :param transaction:
     :return:
     """
-    pass
+    with stash['app'].app_context():
+        custom_placeholder = CustomPlaceholderFactory()
+        db.session.add(custom_placeholder)
+        db.session.commit()
+
 
 
 @hooks.before("Custom Placeholders > Custom Placeholder Details > Custom Placeholder Details")
@@ -3634,7 +3658,7 @@ def event_sub_topic_custom_placeholder_get_detail(transaction):
         event_sub_topic = EventSubTopicFactory()
         db.session.add(event_sub_topic)
 
-        custom_placeholder = CustomPlaceholderFactory(event_sub_topic_id=1)
+        custom_placeholder = CustomPlaceholderFactory()
         db.session.add(custom_placeholder)
         db.session.commit()
 
@@ -3660,7 +3684,10 @@ def user_permission_post(transaction):
     :param transaction:
     :return:
     """
-    pass
+    with stash['app'].app_context():
+        user_permission = UserPermissionFactory()
+        db.session.add(user_permission)
+        db.session.commit()
 
 
 @hooks.before("User Permissions > User Permission Details > Get User Permission Details")
@@ -3960,7 +3987,7 @@ def event_statistics_general_get(transaction):
         db.session.commit()
 
 
-# ------------------------- Event Statistics -------------------------
+# ------------------------- Order Statistics -------------------------
 
 @hooks.before("Order Statistics > Order Statistics Details By Event > Show Order Statistics By Event")
 def order_statistics_event_get(transaction):
@@ -4117,20 +4144,6 @@ def get_event_from_order(transaction):
         db.session.commit()
 
 
-@hooks.before("Tickets > List Tickets for an Order > List Tickets")
-def get_tickets_from_order(transaction):
-    """
-    GET /v1/orders/{identifier}/tickets
-    :param transaction:
-    :return:
-    """
-    with stash['app'].app_context():
-        order = OrderFactory()
-        order.identifier = "7201904e"
-        db.session.add(order)
-        db.session.commit()
-
-
 @hooks.before("Attendees > List Attendees under an order > List All Attendees under an order")
 def get_attendees_from_order(transaction):
     """
@@ -4156,4 +4169,301 @@ def reset_password_patch(transaction):
         user = UserFactory(is_verified=True)
         user.reset_password = 'token'
         db.session.add(user)
+        db.session.commit()
+
+
+# ------------------------- Custom System Role -------------------------
+
+@hooks.before("Custom System Roles > Custom System Roles Collection > List All Custom System Roles")
+def custom_system_roles_get_list(transaction):
+    """
+    GET /custom-system-roles
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        custom_system_role = CustomSysRoleFactory()
+        db.session.add(custom_system_role)
+        db.session.commit()
+
+
+@hooks.before("Custom System Roles > Custom System Roles Collection > Create Custom System Role")
+def custom_system_roles_post(transaction):
+    """
+    POST /custom-system-roles
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        custom_system_role = CustomSysRoleFactory()
+        db.session.add(custom_system_role)
+        db.session.commit()
+
+
+@hooks.before("Custom System Roles > Custom System Roles Details > Get Details")
+def custom_system_role_get_detail(transaction):
+    """
+    GET /custom-system-roles/2
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        custom_system_role = CustomSysRoleFactory()
+        db.session.add(custom_system_role)
+        db.session.commit()
+
+
+@hooks.before("Custom System Roles > Custom System Roles Details > Update Custom System Role")
+def custom_system_role_patch(transaction):
+    """
+    PATCH /custom-system-roles/2
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        custom_system_role = CustomSysRoleFactory()
+        db.session.add(custom_system_role)
+        db.session.commit()
+
+
+@hooks.before("Custom System Roles > Custom System Roles Details > Delete Custom System Role")
+def custom_system_role_delete(transaction):
+    """
+    DELETE /custom-system-roles/2
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        custom_system_role = CustomSysRoleFactory()
+        db.session.add(custom_system_role)
+        db.session.commit()
+
+
+@hooks.before("Custom System Roles > Custom System Role Details for a Panel Permission >"
+                " Custom System Role Details for a Panel Permission")
+def custom_system_roles_panel_permission(transaction):
+    """
+    GET /panel-permissions/1/custom-system-roles
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        panel_permission = PanelPermissionFactory()
+        db.session.add(panel_permission)
+        db.session.commit()
+
+
+# ------------------------- Panel Permission -------------------------
+
+
+@hooks.before("Panel Permissions > Panel Permissions Collection > List All Panel Permissions")
+def panel_permission_get_list(transaction):
+    """
+    GET /panel-permissions
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        panel_permission = PanelPermissionFactory()
+        db.session.add(panel_permission)
+        db.session.commit()
+
+
+@hooks.before("Panel Permissions > Panel Permissions Collection > Create Panel Permissions")
+def panel_permission_post(transaction):
+    """
+    POST /panel-permissions
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        panel_permission = PanelPermissionFactory()
+        db.session.add(panel_permission)
+        db.session.commit()
+
+
+@hooks.before("Panel Permissions > Panel Permission Details > Get Details")
+def panel_permission_get_detail(transaction):
+    """
+    GET /panel-permissions/10
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        panel_permission = PanelPermissionFactory()
+        db.session.add(panel_permission)
+        db.session.commit()
+
+
+@hooks.before("Panel Permissions > Panel Permission Details > Update Panel Permission")
+def panel_permission_patch(transaction):
+    """
+    PATCH /panel-permissions/10
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        panel_permission = PanelPermissionFactory()
+        db.session.add(panel_permission)
+        db.session.commit()
+
+
+@hooks.before("Panel Permissions > Panel Permission Details > Delete Panel Permission")
+def panel_permission_delete(transaction):
+    """
+    DELETE /panel-permissions/10
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        panel_permission = PanelPermissionFactory()
+        db.session.add(panel_permission)
+        db.session.commit()
+
+
+@hooks.before(
+    "Panel Permissions > Panel Permission Details for a Custom System Role > "
+    "Panel Permission Details for a Custom System Role")
+def panel_permissions_custom_system_role(transaction):
+    """
+    GET /custom-system-roles/1/panel-permissions
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        panel_permission = PanelPermissionFactory()
+        db.session.add(panel_permission)
+        db.session.commit()
+
+# ------------------------- User Favourite Events -------------------------
+
+@hooks.before("Favourite Events > Favourite Events Collection > List All Favourite Events")
+def favourite_events_list_get(transaction):
+    """
+    GET /user-favourite-events
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        user_fav_event = UserFavouriteEventFactory()
+        db.session.add(user_fav_event)
+        db.session.commit()
+
+
+@hooks.before("Favourite Events > Favourite Events Collection > Create a Favourite Event")
+def favourite_events_list_post(transaction):
+    """
+    POST /user-favourite-events
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        user_fav_event = UserFavouriteEventFactory()
+        db.session.add(user_fav_event)
+        db.session.commit()
+
+
+@hooks.before("Favourite Events > Favourite Events Detail > Get Details")
+def favourite_event_details_get(transaction):
+    """
+    GET /user-favourite-events/1
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        user_fav_event = UserFavouriteEventFactory()
+        db.session.add(user_fav_event)
+        db.session.commit()
+
+
+@hooks.before("Favourite Events > Favourite Events Detail > Delete Favourite Event")
+def favourite_event_delete(transaction):
+    """
+    DELETE /user-favourite-events/1
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        user_fav_event = UserFavouriteEventFactory()
+        db.session.add(user_fav_event)
+        db.session.commit()
+
+
+# ------------------------- Admin Statistics -------------------------
+
+@hooks.before("Admin Statistics > Event Statistics Details > Show Event Statistics")
+def event_statistics_get(transaction):
+    """
+    GET /admin/statistics/events
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        event = EventFactoryBasic()
+        db.session.add(event)
+        db.session.commit()
+
+
+@hooks.before("Admin Statistics > Event Types Statistics Details > Show Event Types Statistics")
+def event_type_statistics_get(transaction):
+    """
+    GET /admin/statistics/event-types
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        event_type = EventTypeFactory()
+        db.session.add(event_type)
+        db.session.commit()
+
+
+@hooks.before("Admin Statistics > Event Topics Statistics Details > Show Event Topics Statistics")
+def event_topic_statistics_get(transaction):
+    """
+    GET /admin/statistics/event-topics
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        event_topic = EventTopicFactory()
+        db.session.add(event_topic)
+        db.session.commit()
+
+
+@hooks.before("Admin Statistics > User Statistics Details > Show User Statistics")
+def user_statistics_get(transaction):
+    """
+    GET /admin/statistics/users
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        user = UserFactory()
+        db.session.add(user)
+        db.session.commit()
+
+
+@hooks.before("Admin Statistics > Session Statistics Details > Show Session Statistics")
+def session_statistics_get(transaction):
+    """
+    GET /admin/statistics/sessions
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        session = SessionFactory()
+        db.session.add(session)
+        db.session.commit()
+
+
+@hooks.before("Admin Statistics > Mail Statistics Details > Show Mail Statistics")
+def mail_statistics_get(transaction):
+    """
+    GET /admin/statistics/mails
+    :param transaction:
+    :return:
+    """
+    with stash['app'].app_context():
+        mail = MailFactory()
+        db.session.add(mail)
         db.session.commit()

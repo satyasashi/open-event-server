@@ -1,4 +1,5 @@
 from sqlalchemy import desc
+from sqlalchemy.schema import UniqueConstraint
 
 from app.models import db
 
@@ -6,8 +7,9 @@ DEFAULT_FEE = 0.0
 
 
 class TicketFees(db.Model):
-    "Persists service and maximum fees for a currency in a country"
+    """Persists service and maximum fees for a currency in a country"""
     __tablename__ = 'ticket_fees'
+    __table_args__ = (UniqueConstraint('currency', 'country', name='country_currency_uc'),)
 
     id = db.Column(db.Integer, primary_key=True)
     currency = db.Column(db.String)
@@ -33,7 +35,7 @@ class TicketFees(db.Model):
 
 
 def get_fee(country, currency):
-    "Returns the fee for a given country and currency string"
+    """Returns the fee for a given country and currency string"""
     fee = db.session.query(TicketFees) \
                     .filter(TicketFees.country == country) \
                     .filter(TicketFees.currency == currency) \
@@ -41,5 +43,18 @@ def get_fee(country, currency):
 
     if fee:
         return fee.service_fee
+
+    return DEFAULT_FEE
+
+
+def get_maximum_fee(country, currency):
+    """Returns the fee for a given country and currency string"""
+    fee = db.session.query(TicketFees) \
+                    .filter(TicketFees.country == country) \
+                    .filter(TicketFees.currency == currency) \
+                    .order_by(desc(TicketFees.id)).first()
+
+    if fee:
+        return fee.maximum_fee
 
     return DEFAULT_FEE

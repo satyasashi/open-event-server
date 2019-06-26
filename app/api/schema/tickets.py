@@ -30,9 +30,20 @@ class TicketSchemaPublic(SoftDeletionSchema):
             if 'sales_ends_at' not in data:
                 data['sales_ends_at'] = ticket.sales_ends_at
 
+            # if 'event_ends_at' not in data:
+            #     data['event_ends_at'] = ticket.event.ends_at
+
         if data['sales_starts_at'] >= data['sales_ends_at']:
             raise UnprocessableEntity({'pointer': '/data/attributes/sales-ends-at'},
                                       "sales-ends-at should be after sales-starts-at")
+
+        # if 'event_ends_at' in data and data['sales_starts_at'] > data['event_ends_at']:
+        #     raise UnprocessableEntity({'pointer': '/data/attributes/sales-starts-at'},
+        #                               "ticket sales-starts-at should be before event ends-at")
+
+        # if 'event_ends_at' in data and data['sales_ends_at'] > data['event_ends_at']:
+        #     raise UnprocessableEntity({'pointer': '/data/attributes/sales-ends-at'},
+        #                               "ticket sales-ends-at should be before event ends-at")
 
     @validates_schema
     def validate_quantity(self, data):
@@ -45,6 +56,11 @@ class TicketSchemaPublic(SoftDeletionSchema):
             if data['quantity'] < data['min_order']:
                 raise UnprocessableEntity({'pointer': '/data/attributes/quantity'},
                                           "quantity should be greater than or equal to min-order")
+
+        if 'min_price' in data and 'max_price' in data and data['type'] == 'donation':
+                if data['min_price'] > data['max_price']:
+                    raise UnprocessableEntity({'pointer': '/data/attributes/min-price'},
+                                              "minimum price should be lesser than or equal to maximum price")
 
         if 'quantity' in data and 'max_order' in data:
             if data['quantity'] < data['max_order']:
@@ -67,6 +83,8 @@ class TicketSchemaPublic(SoftDeletionSchema):
     description = fields.Str(allow_none=True)
     type = fields.Str(required=True)
     price = fields.Float(validate=lambda n: n >= 0, allow_none=True)
+    min_price = fields.Float(validate=lambda n: n >= 0)
+    max_price = fields.Float(validate=lambda n: n >= 0, allow_none=True)
     quantity = fields.Integer(validate=lambda n: n >= 0, allow_none=True)
     is_description_visible = fields.Boolean(default=False)
     position = fields.Integer(allow_none=True)

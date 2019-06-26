@@ -4,6 +4,7 @@ import oauth2
 from flask import request
 
 from app.settings import get_settings
+from app.api.helpers.files import make_frontend_url
 
 
 class GoogleOAuth(object):
@@ -59,9 +60,9 @@ class FbOAuth(object):
 
     @classmethod
     def get_redirect_uri(cls):
-        url = urllib.parse.urlparse(request.url)
-        fb_redirect_uri = url.scheme + '://' + url.netloc + '/fCallback'
-        return fb_redirect_uri
+        url = make_frontend_url(
+            '/oauth/callback?provider=facebook')
+        return url
 
     @classmethod
     def get_auth_uri(cls):
@@ -77,7 +78,7 @@ class FbOAuth(object):
 
 
 class TwitterOAuth(object):
-    """Facebook Credentials"""
+    """Twitter Credentials"""
     TW_AUTH_URI = 'https://api.twitter.com/oauth/authorize'
     TW_REQUEST_TOKEN_URI = 'https://api.twitter.com/oauth/request_token'
     TW_ACCESS_TOKEN = "https://api.twitter.com/oauth/access_token"
@@ -126,6 +127,7 @@ class TwitterOAuth(object):
 
 
 class InstagramOAuth(object):
+    """Instagram Credentials"""
     INSTAGRAM_OAUTH_URI = "https://api.instagram.com/oauth/authorize/"
     INSTAGRAM_TOKEN_URI = "https://api.instagram.com/oauth/access_token"
     SCOPE = ['basic', 'public_content']

@@ -59,6 +59,7 @@ class Config(object):
     ENABLE_ELASTICSEARCH = env.bool('ENABLE_ELASTICSEARCH', default=False)
     ELASTICSEARCH_HOST = env('ELASTICSEARCH_HOST', default='localhost:9200')
     REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')
+    CELERY_BACKKEND = env('CELERY_BACKEND', default='redis')
 
     # API configs
     SOFT_DELETE = True
@@ -91,6 +92,7 @@ class ProductionConfig(Config):
     The configuration for a production environment
     """
 
+    ENV = 'production'
     MINIFY_PAGE = True
     PRODUCTION = True
     CACHING = True
@@ -112,6 +114,7 @@ class DevelopmentConfig(Config):
     The configuration for a development environment
     """
 
+    ENV = 'development'
     DEVELOPMENT = True
     DEBUG = True
     CACHING = True
@@ -125,8 +128,10 @@ class TestingConfig(Config):
     """
     The configuration for a test suit
     """
+
+    ENV = 'testing'
     TESTING = True
-    CELERY_ALWAYS_EAGER = True
+    CELERY_TASK_ALWAYS_EAGER = True
     CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
     SQLALCHEMY_RECORD_QUERIES = True
     DEBUG_TB_ENABLED = False
