@@ -1,42 +1,112 @@
-import os
 import base64
 import logging
 import random
 import string
+from datetime import timedelta
+from functools import wraps
 
 import requests
+from flask import request, jsonify, make_response, Blueprint, send_file
+from flask_jwt_extended import (
+    jwt_required, jwt_refresh_token_required,
+    fresh_jwt_required, unset_jwt_cookies,
+    current_user, create_access_token,
+    create_refresh_token, set_refresh_cookies,
+    get_jwt_identity)
 from healthcheck import EnvironmentDump
-from functools import wraps
-from flask import request, jsonify, make_response, Blueprint, send_file, url_for, redirect
-from flask_jwt import current_identity as current_user, jwt_required
-from flask_limiter.util import get_remote_address
 from sqlalchemy.orm.exc import NoResultFound
-from app.api.helpers.order import create_pdf_tickets_for_holder
-from app.api.helpers.storage import generate_hash
 
-from app import get_settings
-from app import limiter
 from app.api.helpers.db import save_to_db, get_count
-from app.api.helpers.errors import ForbiddenError, UnprocessableEntityError, NotFoundError, BadRequestError
+from app.api.helpers.auth import AuthManager, blacklist_token
+from app.api.helpers.jwt import jwt_authenticate
+from app.api.helpers.errors import UnprocessableEntityError, NotFoundError, BadRequestError
 from app.api.helpers.files import make_frontend_url
 from app.api.helpers.mail import send_email_with_action, \
     send_email_confirmation
 from app.api.helpers.notification import send_notification_with_action
 from app.api.helpers.third_party_auth import GoogleOAuth, FbOAuth, TwitterOAuth, InstagramOAuth
 from app.api.helpers.utilities import get_serializer, str_generator
+from app.extensions.limiter import limiter
 from app.models import db
-from app.models.order import Order
 from app.models.mail import PASSWORD_RESET, PASSWORD_CHANGE, \
-    USER_REGISTER_WITH_PASSWORD, PASSWORD_RESET_AND_VERIFY
+    PASSWORD_RESET_AND_VERIFY
 from app.models.notification import PASSWORD_CHANGE as PASSWORD_CHANGE_NOTIF
 from app.models.user import User
-from app.api.helpers.storage import UPLOAD_PATHS
-from app.api.helpers.auth import AuthManager
+from app.settings import get_settings
+
 
 logger = logging.getLogger(__name__)
 authorised_blueprint = Blueprint('authorised_blueprint', __name__, url_prefix='/')
-ticket_blueprint = Blueprint('ticket_blueprint', __name__, url_prefix='/v1')
 auth_routes = Blueprint('auth', __name__, url_prefix='/v1/auth')
+
+
+def authenticate(allow_refresh_token=False, existing_identity=None):
+    data = request.get_json()
+    username = data.get('email', data.get('username'))
+    password = data.get('password')
+    criterion = [username, password]
+
+    if not all(criterion):
+        return jsonify(error='username or password missing'), 400
+
+    identity = jwt_authenticate(username, password)
+    if not identity or (existing_identity and identity != existing_identity):
+        # For fresh login, credentials should match existing user
+        return jsonify(error='Invalid Credentials'), 401
+
+    remember_me = data.get('remember-me')
+    include_in_response = data.get('include-in-response')
+    add_refresh_token = allow_refresh_token and remember_me
+
+    expiry_time = timedelta(minutes=90) if add_refresh_token else None
+    access_token = create_access_token(identity.id, fresh=True, expires_delta=expiry_time)
+    response_data = {'access_token': access_token}
+
+    if add_refresh_token:
+        refresh_token = create_refresh_token(identity.id)
+        if include_in_response:
+            response_data['refresh_token'] = refresh_token
+
+    response = jsonify(response_data)
+
+    if add_refresh_token and not include_in_response:
+        set_refresh_cookies(response, refresh_token)
+
+    return response
+
+
+@authorised_blueprint.route('/auth/session', methods=['POST'])
+@auth_routes.route('/login', methods=['POST'])
+def login():
+    return authenticate(allow_refresh_token=True)
+
+
+@auth_routes.route('/fresh-login', methods=['POST'])
+@jwt_required
+def fresh_login():
+    return authenticate(existing_identity=current_user)
+
+
+@auth_routes.route('/token/refresh', methods=['POST'])
+@jwt_refresh_token_required
+def refresh_token():
+    current_user = get_jwt_identity()
+    new_token = create_access_token(identity=current_user, fresh=False)
+    return jsonify({'access_token': new_token})
+
+
+@auth_routes.route('/logout', methods=['POST'])
+def logout():
+    response = jsonify({'success': True})
+    unset_jwt_cookies(response)
+    return response
+
+
+@auth_routes.route('/blacklist', methods=['POST'])
+@jwt_required
+def blacklist_token_rquest():
+    blacklist_token(current_user)
+    return jsonify({'success': True})
 
 
 @auth_routes.route('/oauth/<provider>', methods=['GET'])
@@ -169,7 +239,10 @@ def login_user(provider):
 
 @auth_routes.route('/verify-email', methods=['POST'])
 def verify_email():
-    token = base64.b64decode(request.json['data']['token'])
+    try:
+        token = base64.b64decode(request.json['data']['token'])
+    except base64.binascii.Error:
+        return BadRequestError({'source': ''}, 'Invalid Token').respond()
     s = get_serializer()
 
     try:
@@ -215,7 +288,7 @@ def resend_verification_email():
     '3/hour', key_func=lambda: request.json['data']['email'], error_message='Limit for this action exceeded'
 )
 @limiter.limit(
-    '1/minute', key_func=get_remote_address, error_message='Limit for this action exceeded'
+    '1/minute', error_message='Limit for this action exceeded'
 )
 def reset_password_post():
     try:
@@ -232,7 +305,7 @@ def reset_password_post():
         if user.was_registered_with_order:
             send_email_with_action(user, PASSWORD_RESET_AND_VERIFY, app_name=get_settings()['app_name'], link=link)
         else:
-            send_email_with_action(user, PASSWORD_RESET, app_name=get_settings()['app_name'], link=link)
+            send_email_with_action(user, PASSWORD_RESET, app_name=get_settings()['app_name'], link=link, token=user.reset_password)
 
     return make_response(jsonify(message="If your email was registered with us, you'll get an \
                          email with reset link shortly", email=email), 200)
@@ -249,7 +322,7 @@ def reset_password_patch():
         return NotFoundError({'source': ''}, 'User Not Found').respond()
     else:
         user.password = password
-        if user.was_registered_with_order:
+        if not user.is_verified:
             user.is_verified = True
         save_to_db(user)
 
@@ -261,7 +334,7 @@ def reset_password_patch():
 
 
 @auth_routes.route('/change-password', methods=['POST'])
-@jwt_required()
+@fresh_jwt_required
 def change_password():
     old_password = request.json['data']['old-password']
     new_password = request.json['data']['new-password']
@@ -295,54 +368,10 @@ def change_password():
     })
 
 
-def return_file(file_name_prefix, file_path, order_identifier):
+def return_file(file_name_prefix, file_path, identifier):
     response = make_response(send_file(file_path))
-    response.headers['Content-Disposition'] = 'attachment; filename=%s-%s.pdf' % (file_name_prefix, order_identifier)
+    response.headers['Content-Disposition'] = 'attachment; filename=%s-%s.pdf' % (file_name_prefix, identifier)
     return response
-
-
-@ticket_blueprint.route('/tickets/<string:order_identifier>')
-@jwt_required()
-def ticket_attendee_authorized(order_identifier):
-    if current_user:
-        try:
-            order = Order.query.filter_by(identifier=order_identifier).first()
-        except NoResultFound:
-            return NotFoundError({'source': ''}, 'This ticket is not associated with any order').respond()
-        if current_user.can_download_tickets(order):
-            key = UPLOAD_PATHS['pdf']['tickets_all'].format(identifier=order_identifier)
-            file_path = '../generated/tickets/{}/{}/'.format(key, generate_hash(key)) + order_identifier + '.pdf'
-            try:
-                return return_file('ticket', file_path, order_identifier)
-            except FileNotFoundError:
-                create_pdf_tickets_for_holder(order)
-                return return_file('ticket', file_path, order_identifier)
-        else:
-            return ForbiddenError({'source': ''}, 'Unauthorized Access').respond()
-    else:
-        return ForbiddenError({'source': ''}, 'Authentication Required to access ticket').respond()
-
-
-@ticket_blueprint.route('/orders/invoices/<string:order_identifier>')
-@jwt_required()
-def order_invoices(order_identifier):
-    if current_user:
-        try:
-            order = Order.query.filter_by(identifier=order_identifier).first()
-        except NoResultFound:
-            return NotFoundError({'source': ''}, 'Order Invoice not found').respond()
-        if current_user.can_download_tickets(order):
-            key = UPLOAD_PATHS['pdf']['order'].format(identifier=order_identifier)
-            file_path = '../generated/invoices/{}/{}/'.format(key, generate_hash(key)) + order_identifier + '.pdf'
-            try:
-                return return_file('invoice', file_path, order_identifier)
-            except FileNotFoundError:
-                create_pdf_tickets_for_holder(order)
-                return return_file('invoice', file_path, order_identifier)
-        else:
-            return ForbiddenError({'source': ''}, 'Unauthorized Access').respond()
-    else:
-        return ForbiddenError({'source': ''}, 'Authentication Required to access Invoice').respond()
 
 
 # Access for Environment details & Basic Auth Support

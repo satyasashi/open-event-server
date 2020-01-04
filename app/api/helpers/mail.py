@@ -4,7 +4,6 @@ from datetime import datetime
 
 from flask import current_app
 
-from app import get_settings
 from app.api.helpers.db import save_to_db
 from app.api.helpers.files import make_frontend_url
 from app.api.helpers.log import record_activity
@@ -15,6 +14,7 @@ from app.models.mail import Mail, USER_CONFIRM, NEW_SESSION, USER_CHANGE_EMAIL, 
     EVENT_IMPORTED, EVENT_IMPORT_FAIL, TICKET_PURCHASED_ATTENDEE, TICKET_CANCELLED, TICKET_PURCHASED, USER_EVENT_ROLE, \
     TEST_MAIL
 from app.models.user import User
+from app.settings import get_settings
 
 
 def check_smtp_config(smtp_encryption):
@@ -204,7 +204,7 @@ def send_user_email_role_invite(email, role_name, event_name, link):
     )
 
 
-def send_email_after_event(email, event_name, upcoming_events):
+def send_email_after_event(email, event_name, frontend_url):
     """email for role invite"""
     send_email(
         to=email,
@@ -215,7 +215,7 @@ def send_email_after_event(email, event_name, upcoming_events):
         html=MAILS[AFTER_EVENT]['message'].format(
             email=email,
             event_name=event_name,
-            upcoming_events=upcoming_events
+            url=frontend_url
         )
     )
 
@@ -335,11 +335,13 @@ def send_email_to_attendees(order, purchaser_id, attachments=None):
                 action=TICKET_PURCHASED,
                 subject=MAILS[TICKET_PURCHASED]['subject'].format(
                     event_name=order.event.name,
-                    invoice_id=order.invoice_number
+                    invoice_id=order.invoice_number,
+                    frontend_url=get_settings()['frontend_url']
                 ),
                 html=MAILS[TICKET_PURCHASED]['message'].format(
                     pdf_url=holder.pdf_url,
-                    event_name=order.event.name
+                    event_name=order.event.name,
+                    frontend_url=get_settings()['frontend_url']
                 ),
                 attachments=attachments
             )
@@ -361,16 +363,21 @@ def send_email_to_attendees(order, purchaser_id, attachments=None):
 
 
 def send_order_cancel_email(order):
+    cancel_msg = ''
+    if order.cancel_note:
+        cancel_msg = u"<br/>Message from the organizer: {cancel_note}".format(cancel_note=order.cancel_note)
+
     send_email(
         to=order.user.email,
         action=TICKET_CANCELLED,
         subject=MAILS[TICKET_CANCELLED]['subject'].format(
             event_name=order.event.name,
-            invoice_id=order.invoice_number
+            invoice_id=order.invoice_number,
         ),
         html=MAILS[TICKET_CANCELLED]['message'].format(
             event_name=order.event.name,
-            order_url=make_frontend_url('/orders/{identifier}'.format(identifier=order.identifier)),
-            cancel_note=order.cancel_note
+            frontend_url=get_settings()['frontend_url'],
+            cancel_msg=cancel_msg,
+            app_name=get_settings()['app_name']
         )
     )

@@ -11,6 +11,7 @@ from app.api.helpers.utilities import dasherize
 from app.api.schema.base import SoftDeletionSchema
 from app.models.session import Session
 from utils.common import use_defaults
+from app.api.helpers.validations import validate_complex_fields_json
 
 
 @use_defaults()
@@ -29,7 +30,7 @@ class SessionSchema(SoftDeletionSchema):
         inflect = dasherize
 
     @validates_schema(pass_original=True)
-    def validate_date(self, data, original_data):
+    def validate_fields(self, data, original_data):
         if 'id' in original_data['data']:
             try:
                 session = Session.query.filter_by(id=original_data['data']['id']).one()
@@ -54,7 +55,7 @@ class SessionSchema(SoftDeletionSchema):
                     {'pointer': '/data/attributes/starts-at'}, "starts-at should be after current date-time")
 
         if 'state' in data:
-            if data['state'] is not 'draft' or not 'pending':
+            if data['state'] not in ('draft', 'pending'):
                 if not has_access('is_coorganizer', event_id=data['event']):
                     return ForbiddenException({'source': ''}, 'Co-organizer access is required.')
 
@@ -65,6 +66,8 @@ class SessionSchema(SoftDeletionSchema):
         if 'microlocation' in data:
             if not has_access('is_coorganizer', event_id=data['event']):
                 return ForbiddenException({'source': ''}, 'Co-organizer access is required.')
+
+        validate_complex_fields_json(self, data, original_data)
 
     id = fields.Str(dump_only=True)
     title = fields.Str(required=True)
@@ -90,6 +93,7 @@ class SessionSchema(SoftDeletionSchema):
     last_modified_at = fields.DateTime(dump_only=True)
     send_email = fields.Boolean(load_only=True, allow_none=True)
     average_rating = fields.Float(dump_only=True)
+    complex_field_values = fields.Dict(allow_none=True)
     microlocation = Relationship(attribute='microlocation',
                                  self_view='v1.session_microlocation',
                                  self_view_kwargs={'id': '<id>'},

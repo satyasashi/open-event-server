@@ -55,7 +55,7 @@ class Order(SoftDeletionModel):
     transaction_id = db.Column(db.String)
     paid_via = db.Column(db.String)
     payment_mode = db.Column(db.String)
-    is_billing_enabled = db.Column(db.Boolean)
+    is_billing_enabled = db.Column(db.Boolean, nullable=False, default=False)
     brand = db.Column(db.String)
     exp_month = db.Column(db.Integer)
     exp_year = db.Column(db.Integer)
@@ -73,6 +73,7 @@ class Order(SoftDeletionModel):
 
     event = db.relationship('Event', backref='orders')
     user = db.relationship('User', backref='orders', foreign_keys=[user_id])
+    invoices = db.relationship("EventInvoice", backref='invoice_order')
     marketer = db.relationship('User', backref='marketed_orders', foreign_keys=[marketer_id])
     tickets = db.relationship("Ticket", secondary='orders_tickets', backref='order')
     order_tickets = db.relationship("OrderTicket", backref='order')
@@ -90,6 +91,7 @@ class Order(SoftDeletionModel):
                  transaction_id=None,
                  paid_via=None,
                  is_billing_enabled=False,
+                 created_at=None,
                  user_id=None,
                  discount_code_id=None,
                  event_id=None,
@@ -113,7 +115,9 @@ class Order(SoftDeletionModel):
         self.transaction_id = transaction_id
         self.paid_via = paid_via
         self.is_billing_enabled = is_billing_enabled
-        self.created_at = datetime.datetime.now(datetime.timezone.utc)
+        if created_at is None:
+            created_at = datetime.datetime.now(datetime.timezone.utc)
+        self.created_at = created_at
         self.discount_code_id = discount_code_id
         self.status = status
         self.payment_mode = payment_mode

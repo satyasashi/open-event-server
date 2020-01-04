@@ -14,7 +14,7 @@ discount_codes_tickets = db.Table(
     db.Column('ticket_id', db.Integer, db.ForeignKey('tickets.id', ondelete='CASCADE')),
     db.PrimaryKeyConstraint('discount_code_id', 'ticket_id'))
 
-ticket_tags_table = db.Table('association', db.Model.metadata,
+ticket_tags_table = db.Table('ticket_tagging', db.Model.metadata,
                              db.Column('ticket_id', db.Integer, db.ForeignKey('tickets.id', ondelete='CASCADE')),
                              db.Column('ticket_tag_id', db.Integer, db.ForeignKey('ticket_tag.id', ondelete='CASCADE'))
                              )
@@ -22,7 +22,7 @@ ticket_tags_table = db.Table('association', db.Model.metadata,
 
 class Ticket(SoftDeletionModel):
     __tablename__ = 'tickets'
-    __table_args__ = (db.UniqueConstraint('name', 'event_id', name='name_event_uc'),)
+    __table_args__ = (db.UniqueConstraint('name', 'event_id', 'deleted_at', name='name_event_deleted_at_uc'),)
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
@@ -172,6 +172,9 @@ class TicketTag(SoftDeletionModel):
     Tags to group tickets
     """
     __tablename__ = 'ticket_tag'
+    __table_args__ = (
+        db.UniqueConstraint('name', 'event_id', name='unique_ticket_tag'),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)

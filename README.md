@@ -2,10 +2,11 @@
 
 ![Open Event Server](/docs/images/open-event-server.png)
 
-[![GitHub release](https://img.shields.io/badge/release-1.0.0--alpha.10-blue.svg?style=flat-square)](https://github.com/fossasia/open-event-server/releases/latest)
+[![GitHub release](https://img.shields.io/github/release/fossasia/open-event-server.svg)](https://github.com/fossasia/open-event-server/releases/latest)
 [![Build Status](https://travis-ci.org/fossasia/open-event-server.svg?branch=development)](https://travis-ci.org/fossasia/open-event-server)
+[![CircleCI Build Staus Badge](https://img.shields.io/circleci/build/github/fossasia/open-event-server?label=CircleCI%20Build)](https://www.circleci.com/gh/fossasia/open-event-server)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/1ac554483fac462797ffa5a8b9adf2fa?style=flat-square)](https://www.codacy.com/app/fossasia/open-event-server)
-[![Codecov branch](https://codecov.io/gh/fossasia/open-event-server/branch/master/graph/badge.svg?style=flat-square)](https://codecov.io/gh/fossasia/open-event-server)
+[![Codecov branch](https://codecov.io/gh/fossasia/open-event-server/branch/development/graph/badge.svg?style=flat-square)](https://codecov.io/gh/fossasia/open-event-server)
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-ff006f.svg?style=flat-square)](https://gitter.im/fossasia/open-event-server)
 [![Reviewed by Hound](https://img.shields.io/badge/Reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
 [![Mailing List](https://img.shields.io/badge/Mailing%20List-FOSSASIA-blue.svg)](https://groups.google.com/forum/#!forum/open-event)
@@ -50,9 +51,9 @@ The Open Event Server can be easily deployed on a variety of platforms. Detailed
 1. [Deployment on Heroku](/docs/installation/heroku.md)
 
 
-One-click Heroku and Docker deployments are also available:
+One-click Heroku deployment is also available:
 
-[![Deploy to Docker Cloud](https://files.cloud.docker.com/images/deploy-to-dockercloud.svg)](https://cloud.docker.com/stack/deploy/?repo=https://github.com/fossasia/open-event-server)  [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
 
 ## Technology Stack
@@ -66,7 +67,7 @@ Please get familiar with the components of the project in order to be able to co
 * App server - [uWSGI](https://github.com/unbit/uwsgi)
 * Web Server - [NGINX](https://www.nginx.com)
 
-Note that open-event-server **works with Python 3.6** at the moment.
+Note that open-event-server **works with Python 3.7** at the moment.
 
 ### External Service Dependencies
 
@@ -193,6 +194,34 @@ Clone the repo and set up the server according to the steps listed. Make sure yo
 pip3 install -r requirements/tests.txt
 ```
 
+#### Enable/Disable modules
+
+-   Enable/Disable a specific module
+
+```
+python manage.py module --name module_name --switch on/off
+```
+
+**_Example :_**
+
+```
+python manage.py module --name ticket_include --switch on
+python manage.py module -n ticket_include -s off
+```
+
+-   Enable/Disable all modules
+
+```
+python manage.py module --name module_name --switch on/off
+```
+
+**_Example :_**
+
+```
+python manage.py module --name all --switch on
+python manage.py module -n all -s off
+```
+
 #### Running unit tests
 
 * Open Event uses Postgres database for testing. So set `DATABASE_URL` as a postgres database. Here is an example.
@@ -205,13 +234,13 @@ export APP_CONFIG=config.TestingConfig
 
 * Then go to the project directory and run the following command:
 ```
-python3 -m unittest discover tests/all/
+python3 -m unittest discover tests/
 ```
 * It will run each test one by one.
 
 * You can also use the following command to run tests using nosetests:
 ```
-nosetests tests/all/
+nosetests tests/
 ```
 
 #### Running robot framework tests
@@ -253,10 +282,10 @@ This is an Open Source project and we would be happy to see contributors who rep
 We have the following branches :
  * **development**
 	 All development goes on in this branch. If you're making a contribution, please make a pull request to _development_.
-	 All PRs must pass a build check and a unit-test check on Travis (https://open-event-api.herokuapp.com - Is running off the development branch. It is hosted on Heroku.)
-	 (https://api.eventyay.com - Is running off the `development` branch. Hosted on Google Cloud Platform (Google Container Engine + Kubernetes).)
+	 All PRs must pass a build check and a unit-test check on Travis (https://open-event-api-dev.herokuapp.com - Is running off of the development branch. It is hosted on Heroku.)
+	 
  * **master**
-   This contains shipped code. After significant features/bug-fixes are accumulated on development, we make a version update and make a release. (https://eventyay.com - Is running off the master branch. (whichever is the latest release.) Hosted on Google Cloud Platform (Google Container Engine + Kubernetes).)
+   This contains shipped code. After significant features/bug-fixes are accumulated on development, we make a version update and make a release. (https://api.eventyay.com - Is running off of the `master` branch. Hosted on Google Cloud Platform (Google Container Engine + Kubernetes).)
  * **gh-pages**
    This contains the documentation website on http://dev.eventyay.com. The site is built automatically on each commit in the development branch through a script and using travis. It includes the md files of the Readme and /docs folder. It also includes javadocs.
 

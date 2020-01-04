@@ -81,7 +81,8 @@ UPLOAD_PATHS = {
     'pdf': {
         'ticket_attendee': 'attendees/tickets/pdf/{identifier}',
         'order': 'orders/invoices/pdf/{identifier}',
-        'tickets_all': 'orders/tickets/pdf/{identifier}'
+        'tickets_all': 'orders/tickets/pdf/{identifier}',
+        'event_invoice': 'events/organizer/invoices/pdf/{identifier}'
     }
 }
 
@@ -90,7 +91,7 @@ UPLOAD_PATHS = {
 # HELPER CLASSES
 ################
 
-class UploadedFile(object):
+class UploadedFile:
     """
     Helper for a disk-file to replicate request.files[ITEM] class
     """
@@ -98,7 +99,16 @@ class UploadedFile(object):
     def __init__(self, file_path, filename):
         self.file_path = file_path
         self.filename = filename
-        self.file = open(file_path)
+        self.file = open(file_path, 'rb')
+
+    def __len__(self):
+        position = self.file.tell()
+        try:
+            self.file.seek(0, os.SEEK_END)
+            last_position = self.file.tell()
+        finally:
+            self.file.seek(position)
+        return last_position
 
     def save(self, new_path):
         copyfile(self.file_path, new_path)
@@ -110,7 +120,7 @@ class UploadedFile(object):
         self.file.close()
 
 
-class UploadedMemory(object):
+class UploadedMemory:
     """
     Helper for a memory file to replicate request.files[ITEM] class
     """
@@ -177,7 +187,7 @@ def upload_local(uploaded_file, key, upload_dir='static/media/', **kwargs):
     file_relative_path = '/' + file_relative_path
     if get_settings()['static_domain']:
         return get_settings()['static_domain'] + \
-               file_relative_path.replace('/static', '')
+               file_relative_path
 
     return create_url(request.url, file_relative_path)
 
@@ -223,15 +233,15 @@ def upload_to_aws(bucket_name, aws_region, aws_key, aws_secret, file, key, acl='
         item.delete()
     # set object settings
 
-    file_data = file.read()
-    file_mime = magic.from_buffer(file_data, mime=True)
-    size = len(file_data)
-    sent = k.set_contents_from_string(
-        file_data,
+    file_mime = magic.from_file(file.file_path, mime=True)
+    size = len(file)
+    sent = k.set_contents_from_file(
+        file.file,
         headers={
             'Content-Disposition': 'attachment; filename=%s' % filename,
             'Content-Type': '%s' % file_mime
-        }
+        },
+        rewind=True
     )
     k.set_acl(acl)
     s3_url = 'https://%s.s3.amazonaws.com/' % bucket_name

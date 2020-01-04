@@ -3,9 +3,9 @@ from marshmallow import post_dump, validates_schema, validate
 from marshmallow_jsonapi import fields
 from marshmallow_jsonapi.flask import Relationship
 
-from app import db
 from app.api.helpers.utilities import dasherize
 from app.api.schema.base import SoftDeletionSchema
+from app.models import db
 from utils.common import use_defaults
 
 
@@ -61,7 +61,7 @@ class OrderSchema(SoftDeletionSchema):
     payment_mode = fields.Str(
                             default="free",
                             validate=validate.OneOf(choices=["free", "stripe", "paypal", "bank",
-                                                             "cheque", "onsite", "omise", "alipay"]),
+                                                             "cheque", "onsite", "omise", "alipay", "paytm"]),
                             allow_none=True)
     paid_via = fields.Str(dump_only=True)
     is_billing_enabled = fields.Boolean(default=False)
@@ -115,6 +115,14 @@ class OrderSchema(SoftDeletionSchema):
                          related_view_kwargs={'id': '<event_id>'},
                          schema='EventSchemaPublic',
                          type_="event")
+
+    event_invoice = Relationship(attribute='invoice',
+                                 self_view='v1.order_event_invoice',
+                                 self_view_kwargs={'order_identifier': '<identifier>'},
+                                 related_view='v1.event_invoice_detail',
+                                 related_view_kwargs={'id': '<id>'},
+                                 schema='EventInvoiceSchema',
+                                 type_="event_invoice")
 
     marketer = Relationship(attribute='marketer',
                             self_view='v1.order_marketer',

@@ -2,7 +2,7 @@
 
 ## Dependencies required to run Orga Server
 
-* Python 3
+* Python 3.7
 * Postgres
 * OpenSSL
 
@@ -65,7 +65,8 @@ brew install libmagic
 Open a terminal and enter the following commands to setup a virtual environment
 
 ```sh
-virtualenv -p python3 venv
+sudo apt-get install python3.7
+virtualenv -p python3.7 venv
 . venv/bin/activate
 ```
 
@@ -82,7 +83,7 @@ Using pipenv, you will not need to set up virtualenv. It will do it automaticall
 To setup a virtual environment and install the dependices, enter in a terminal
 
 ```sh
-pipenv install
+pipenv --python 3.7.3 install
 ```
 
 Now to activate the virtual environemnt, type
@@ -92,7 +93,7 @@ pipenv shell
 ```
 
 
-* **Step 2** - Create the database. For that we first open the psql shell. Go the directory where your postgres file is stored.
+* **Step 2** - Create the database. For that we first open the psql shell. Go to the directory where your postgres file is stored.
 
 ```sh
 # For linux users
@@ -183,7 +184,7 @@ The development server is the one that Flask ships with. It's based on Werkzeug 
 If you've installed development requirements, you should have both `gunicorn` and `eventlet` installed. To run application on port 5000, execute the following instead of `python3 manage.py runserver`:
 
 ```bash
-gunicorn app:app --worker-class eventlet -w 1 --bind 0.0.0.0:5000 --reload
+gunicorn app.instance:app --worker-class eventlet -w 1 --bind 0.0.0.0:5000 --reload
 ```
 
 `-w` specifies the number of worker classes to be used. `--reload` is used for development environments, so the server is restarted if any of the application python files change.
@@ -235,7 +236,7 @@ Test the Nginx configuration and restart the Nginx server. Then run the Gunicorn
 ```bash
 sudo service nginx testconfig # Should respond with "test is successful"
 sudo service nginx restart
-gunicorn app:app --worker-class eventlet -w 1 --bind 0.0.0.0:5001 --reload
+gunicorn app.instance:app --worker-class eventlet -w 1 --bind 0.0.0.0:5001 --reload
 ```
 
 ---
